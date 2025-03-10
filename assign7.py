@@ -3,8 +3,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Load the existing CSV file
 data = pd.read_csv('SLPD.csv')
+data = data.drop('Pattern', axis=1, errors='ignore')
+
 
 # Print column names to diagnose the structure
 print("Columns in SLPD.csv:", data.columns.tolist())
