@@ -15,9 +15,8 @@ print("Dataset shape:", data.shape)
 print("\nClass distribution:")
 print(data['dx'].value_counts())
 
-# Handle missing values
+# Handling missing values
 data['age'].fillna(data['age'].median(), inplace=True)
-# Convert age 0.0 to median age (likely represents missing values)
 data.loc[data['age'] == 0.0, 'age'] = data['age'].median()
 data['sex'].fillna(data['sex'].mode()[0], inplace=True)
 data['localization'].fillna(data['localization'].mode()[0], inplace=True)
