@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import simpson  # Modern replacement for simps
+from scipy.integrate import simpson
 from scipy.interpolate import interp1d
 
 # Given data
