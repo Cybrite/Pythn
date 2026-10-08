@@ -2,3 +2,4 @@ myenv
 *.csv
 *.data
 *.png
+__pycache__
