@@ -149,7 +149,35 @@ m_g = y[5]
 T = y[6]
 
 
-# GRAPH 1: MASS PROFILES
+#Temperature profile of biomass
+plt.figure(figsize=(9,6))
+
+plt.plot(t, T, 'k-', linewidth=2)
+
+plt.xlabel('Time (s)')
+plt.ylabel('Temperature (K)')
+plt.title('Biomass Temperature Profile')
+
+plt.grid(True)
+
+plt.show()
+
+# Wall temperature profile
+T_wall = np.minimum(T0 + 10*t, Tw_max)
+
+plt.figure(figsize=(9,6))
+
+plt.plot(t, T_wall, linewidth=2)
+
+plt.xlabel('Time (s)')
+plt.ylabel('Wall Temperature (K)')
+plt.title('Wall Temperature Profile')
+
+plt.grid(True)
+
+plt.show()
+
+# Mass profiles of biomass and products
 plt.figure(figsize=(9,6))
 
 plt.plot(t, m_c, label='Cellulose', linewidth=2)
@@ -170,36 +198,8 @@ plt.title('Biomass Pyrolysis Mass Profiles')
 plt.show()
 
 
-# GRAPH 2: TEMPERATURE PROFILE
-plt.figure(figsize=(9,6))
 
-plt.plot(t, T, 'k-', linewidth=2)
-
-plt.xlabel('Time (s)')
-plt.ylabel('Temperature (K)')
-plt.title('Biomass Temperature Profile')
-
-plt.grid(True)
-
-plt.show()
-
-# GRAPH 3: WALL TEMPERATURE
-T_wall = np.minimum(T0 + 10*t, Tw_max)
-
-plt.figure(figsize=(9,6))
-
-plt.plot(t, T_wall, linewidth=2)
-
-plt.xlabel('Time (s)')
-plt.ylabel('Wall Temperature (K)')
-plt.title('Wall Temperature Profile')
-
-plt.grid(True)
-
-plt.show()
-
-
-# MASS CONSERVATION CHECK
+# Mass conservation check
 m_total = (
     m_c
     + m_h
