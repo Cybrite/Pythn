@@ -2,9 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-# ============================================================
 # PARAMETERS
-# ============================================================
 
 m0 = 0.10                 # Initial biomass mass (kg)
 T0 = 298.15               # Initial temperature (K)
@@ -19,9 +17,7 @@ f_c = 0.45
 f_h = 0.30
 f_l = 0.25
 
-# ============================================================
 # INITIAL CONDITIONS
-# ============================================================
 
 m_c0 = m0 * f_c
 m_h0 = m0 * f_h
@@ -45,62 +41,40 @@ y0 = [
     T0
 ]
 
-# ============================================================
 # ODE FUNCTION
-# ============================================================
 
 def pyrolysis_odes(t, y):
 
-    # State variables
-    m_c = y[0]
-    m_h = y[1]
-    m_l = y[2]
-    m_v = y[3]
-    m_ch = y[4]
-    m_g = y[5]
-    T = y[6]
+    # State variables for biomass and products
+    m_c = y[0]  # Cellulose mass
+    m_h = y[1]  # Hemicellulose mass
+    m_l = y[2]  # Lignin mass
+    m_v = y[3]  # Vapor mass
+    m_ch = y[4] # Char mass
+    m_g = y[5]  # Gas mass
+    T = y[6]    # Bulk temperature
 
-    # --------------------------------------------------------
-    # Wall temperature
-    # --------------------------------------------------------
-
+    # Wall temperature profile
     T_w = min(T0 + 10*t, Tw_max)
 
-    # --------------------------------------------------------
     # Reaction rate constants
-    # --------------------------------------------------------
-
     k_c = 70000 * np.exp(-80000 / (R*T))
-
     k_h = 2e9 * np.exp(-146000 / (R*T))
-
     k_l = 4300 * np.exp(-77000 / (R*T))
-
     k_s = 2e5 * np.exp(-95000 / (R*T))
 
-    # --------------------------------------------------------
-    # Reaction rates
-    # --------------------------------------------------------
+    # Conversion rates for each reaction step
+    r_c = k_c * m_c # Cellulose decomposition rate
+    r_h = k_h * m_h  # Hemicellulose decomposition rate
+    r_l = k_l * m_l  # Lignin decomposition rate
+    r_s = k_s * m_v  # Secondary vapor cracking rate
 
-    r_c = k_c * m_c
-
-    r_h = k_h * m_h
-
-    r_l = k_l * m_l
-
-    r_s = k_s * m_v
-
-    # --------------------------------------------------------
     # ODEs
-    # --------------------------------------------------------
+    dm_c_dt = -r_c  # Cellulose consumption
+    dm_h_dt = -r_h  # Hemicellulose consumption
+    dm_l_dt = -r_l  # Lignin consumption
 
-    dm_c_dt = -r_c
-
-    dm_h_dt = -r_h
-
-    dm_l_dt = -r_l
-
-    # Vapor
+    # Vapor evolution
     dm_v_dt = (
         0.78*r_c
         + 0.70*r_h
@@ -108,7 +82,7 @@ def pyrolysis_odes(t, y):
         - r_s
     )
 
-    # Char
+    # Char formation
     dm_ch_dt = (
         0.10*r_c
         + 0.15*r_h
@@ -116,7 +90,7 @@ def pyrolysis_odes(t, y):
         + 0.25*r_s
     )
 
-    # Gas
+    # Gas formation
     dm_g_dt = (
         0.12*r_c
         + 0.15*r_h
@@ -124,19 +98,14 @@ def pyrolysis_odes(t, y):
         + 0.75*r_s
     )
 
-    # --------------------------------------------------------
-    # Energy balance
-    # --------------------------------------------------------
-
-    q_in = UA * (T_w - T)
-
-    q_rxn = dH * (r_c + r_h + r_l)
-
+    # Energy balance for the lumped biomass
+    q_in = UA * (T_w - T)  # Heat supplied from wall to biomass
+    q_rxn = dH * (r_c + r_h + r_l)  # Heat consumed by pyrolysis reactions
     dT_dt = (
         q_in - q_rxn
     ) / (m0 * Cp)
 
-    # Return derivatives
+    # Return the derivative vector
     dydt = [
         dm_c_dt,
         dm_h_dt,
@@ -150,9 +119,7 @@ def pyrolysis_odes(t, y):
     return dydt
 
 
-# ============================================================
 # SOLVE ODEs
-# ============================================================
 
 t_start = 0
 t_end = 300
@@ -182,10 +149,7 @@ m_g = y[5]
 T = y[6]
 
 
-# ============================================================
 # GRAPH 1: MASS PROFILES
-# ============================================================
-
 plt.figure(figsize=(9,6))
 
 plt.plot(t, m_c, label='Cellulose', linewidth=2)
@@ -206,10 +170,7 @@ plt.title('Biomass Pyrolysis Mass Profiles')
 plt.show()
 
 
-# ============================================================
 # GRAPH 2: TEMPERATURE PROFILE
-# ============================================================
-
 plt.figure(figsize=(9,6))
 
 plt.plot(t, T, 'k-', linewidth=2)
@@ -222,11 +183,7 @@ plt.grid(True)
 
 plt.show()
 
-
-# ============================================================
 # GRAPH 3: WALL TEMPERATURE
-# ============================================================
-
 T_wall = np.minimum(T0 + 10*t, Tw_max)
 
 plt.figure(figsize=(9,6))
@@ -242,10 +199,7 @@ plt.grid(True)
 plt.show()
 
 
-# ============================================================
 # MASS CONSERVATION CHECK
-# ============================================================
-
 m_total = (
     m_c
     + m_h
