@@ -22,16 +22,16 @@ The model also tracks temperature evolution during heating and reaction.
 
 The state vector is:
 
-- y = [m_cell, m_hem, m_lig, m_vap, m_char, m_gas, T]
+- y = [m_c, m_h, m_l, m_v, m_ch, m_g, T]
 
 where:
 
-- m_cell = mass of cellulose (kg)
-- m_hem = mass of hemicellulose (kg)
-- m_lig = mass of lignin (kg)
-- m_vap = mass of vapor (kg)
-- m_char = mass of char (kg)
-- m_gas = mass of gas (kg)
+- m_c = mass of cellulose (kg)
+- m_h = mass of hemicellulose (kg)
+- m_l = mass of lignin (kg)
+- m_v = mass of vapor (kg)
+- m_ch = mass of char (kg)
+- m_g = mass of gas (kg)
 - T = reactor temperature (K)
 
 The total initial biomass mass is:
@@ -40,19 +40,19 @@ m0 = 0.10 kg
 
 The biomass composition fractions are:
 
-- f_cell = 0.45
-- f_hem = 0.30
-- f_lig = 0.25
+- f_c = 0.45
+- f_h = 0.30
+- f_l = 0.25
 
 So the initial masses are:
 
-m_cell,0 = m0 _ f_cell = 0.10 _ 0.45 = 0.045 kg
-m_hem,0 = m0 _ f_hem = 0.10 _ 0.30 = 0.030 kg
-m_lig,0 = m0 _ f_lig = 0.10 _ 0.25 = 0.025 kg
+m_c0 = m0 × f_c = 0.10 × 0.45 = 0.045 kg
+m_h0 = m0 × f_h = 0.10 × 0.30 = 0.030 kg
+m_l0 = m0 × f_l = 0.10 × 0.25 = 0.025 kg
 
 All product masses start at zero:
 
-m_vap,0 = m_char,0 = m_gas,0 = 0
+m_v0 = m_ch0 = m_g0 = 0
 
 ---
 
@@ -71,10 +71,10 @@ where:
 
 The code uses:
 
-k_cell = 70000 _ exp(-80000 / (R T))
-k_hem = 2e9 _ exp(-146000 / (R T))
-k_lignin = 4300 _ exp(-77000 / (R T))
-k_secondary = 2e5 _ exp(-95000 / (R T))
+k_c = 70000 × exp(-80000 / (R × T))
+k_h = 2e9 × exp(-146000 / (R × T))
+k_l = 4300 × exp(-77000 / (R × T))
+k_s = 2e5 × exp(-95000 / (R × T))
 
 These are the decomposition rates of:
 
@@ -85,10 +85,10 @@ These are the decomposition rates of:
 
 The model assumes the decomposition rate is proportional to the remaining mass of each reactive species:
 
-r_cell = k_cell _ m_cell
-r_hem = k_hem _ m_hem
-r_lignin = k_lignin _ m_lig
-r_S = k_secondary _ m_vap
+r_c = k_c × m_c
+r_h = k_h × m_h
+r_l = k_l × m_l
+r_s = k_s × m_v
 
 These are first-order mass-loss reactions.
 
@@ -100,60 +100,60 @@ These are first-order mass-loss reactions.
 
 Cellulose decomposes directly and is consumed according to its reaction rate:
 
-dm_cell/dt = -r_cell
+d(m_c)/dt = -r_c
 
 This matches the code:
 
-dm_cell_dt = -r_cell
+dm_c_dt = -r_c
 
 ### 4.2 Hemicellulose balance
 
 Similarly:
 
-dm_hem/dt = -r_hem
+d(m_h)/dt = -r_h
 
 ### 4.3 Lignin balance
 
 Similarly:
 
-dm_lig/dt = -r_lignin
+d(m_l)/dt = -r_l
 
 ### 4.4 Vapor balance
 
 The vapor is formed from primary decomposition and reduced by secondary cracking:
 
-dm_vap/dt = 0.78 r_cell + 0.70 r_hem + 0.35 r_lignin - r_S
+d(m_v)/dt = 0.78 r_c + 0.70 r_h + 0.35 r_l - r_s
 
 This is exactly the code expression:
 
-dm_vap_dt = 0.78*r_cell + 0.70*r_hem + 0.35\*r_lignin - r_S
+dm_v_dt = 0.78*r_c + 0.70*r_h + 0.35\*r_l - r_s
 
 Interpretation:
 
 - 78% of cellulose conversion becomes vapor
 - 70% of hemicellulose conversion becomes vapor
 - 35% of lignin conversion becomes vapor
-- secondary vapor cracking consumes vapor at rate r_S
+- secondary vapor cracking consumes vapor at rate r_s
 
 ### 4.5 Char balance
 
 Char is produced from decomposition and also from secondary cracking:
 
-dm_char/dt = 0.10 r_cell + 0.15 r_hem + 0.45 r_lignin + 0.25 r_S
+d(m_ch)/dt = 0.10 r_c + 0.15 r_h + 0.45 r_l + 0.25 r_s
 
 This is the code line:
 
-dm_char_dt = 0.10*r_cell + 0.15*r_hem + 0.45*r_lignin + 0.25*r_S
+dm_ch_dt = 0.10*r_c + 0.15*r_h + 0.45*r_l + 0.25*r_s
 
 ### 4.6 Gas balance
 
 Gas is produced from both primary decomposition and secondary cracking:
 
-dm_gas/dt = 0.12 r_cell + 0.15 r_hem + 0.20 r_lignin + 0.75 r_S
+d(m_g)/dt = 0.12 r_c + 0.15 r_h + 0.20 r_l + 0.75 r_s
 
 This matches the code:
 
-dm_gas_dt = 0.12*r_cell + 0.15*r_hem + 0.20*r_lignin + 0.75*r_S
+dm_g_dt = 0.12*r_c + 0.15*r_h + 0.20*r_l + 0.75*r_s
 
 ---
 
@@ -161,15 +161,15 @@ dm_gas_dt = 0.12*r_cell + 0.15*r_hem + 0.20*r_lignin + 0.75*r_S
 
 The total mass is:
 
-m_total = m_cell + m_hem + m_lig + m_vap + m_char + m_gas
+m_total = m_c + m_h + m_l + m_v + m_ch + m_g
 
 Its time derivative is:
 
-dm_total/dt = dm_cell/dt + dm_hem/dt + dm_lig/dt + dm_vap/dt + dm_char/dt + dm_gas/dt
+d(m_total)/dt = d(m_c)/dt + d(m_h)/dt + d(m_l)/dt + d(m_v)/dt + d(m_ch)/dt + d(m_g)/dt
 
 Substituting the expressions above:
 
-dm_total/dt = -r_cell - r_hem - r_lignin + (0.78r_cell + 0.70r_hem + 0.35r_lignin - r_S) + (0.10r_cell + 0.15r_hem + 0.45r_lignin + 0.25r_S) + (0.12r_cell + 0.15r_hem + 0.20r_lignin + 0.75r_S)
+d(m_total)/dt = -r_c - r_h - r_l + (0.78 r_c + 0.70 r_h + 0.35 r_l - r_s) + (0.10 r_c + 0.15 r_h + 0.45 r_l + 0.25 r_s) + (0.12 r_c + 0.15 r_h + 0.20 r_l + 0.75 r_s)
 
 Grouping terms:
 
@@ -180,7 +180,7 @@ Grouping terms:
 
 So:
 
-dm_total/dt = 0
+d(total_mass)/dt = 0
 
 Therefore the model conserves total mass exactly, as expected.
 
@@ -192,30 +192,30 @@ This is one of the strongest points of the code.
 
 The temperature equation in the code is:
 
-heat_transfer = UA \* (T_w - T)
+q_in = UA × (T_w - T)
 
-heat_required = dH_pyr \* (r_cell + r_hem + r_lignin)
+q_rxn = dH × (r_c + r_h + r_l)
 
-dT_dt = (heat_transfer - heat_required) / (m0 \* Cp_bio)
+dT_dt = (q_in - q_rxn) / (m0 × Cp)
 
 where:
 
 - UA = heat transfer coefficient
-- T_w = wall temperature
+- T_w = reactor wall temperature
 - T = biomass temperature
-- dH_pyr = pyrolysis enthalpy
-- Cp_bio = biomass heat capacity
+- dH = reaction enthalpy
+- Cp = biomass heat capacity
 
 ### 6.1 Wall temperature profile
 
 The code defines:
 
-T_w = min(T_in + 10 t, T_w_max)
+T_w = min(T0 + 10t, Tw_max)
 
 with:
 
-- T_in = 298.15 K
-- T_w_max = 773.15 K
+- T0 = 298.15 K
+- Tw_max = 773.15 K
 
 This means the wall is heated linearly at 10 K/s until it reaches a maximum of 773.15 K.
 
@@ -223,11 +223,11 @@ This means the wall is heated linearly at 10 K/s until it reaches a maximum of 7
 
 A lumped energy balance is approximated as:
 
-m0 _ Cp_bio _ dT/dt = UA (T_w - T) - dH_pyr (r_cell + r_hem + r_lignin)
+m0 × Cp × dT/dt = UA (T_w - T) - dH (r_c + r_h + r_l)
 
 Rearranging:
 
-dT/dt = [UA (T_w - T) - dH_pyr (r_cell + r_hem + r_lignin)] / (m0 \* Cp_bio)
+dT/dt = [UA (T_w - T) - dH (r_c + r_h + r_l)] / (m0 × Cp)
 
 This is the code’s exact temperature balance.
 
@@ -262,8 +262,8 @@ This confirms the code is conserving mass to numerical precision.
 ### Limitations and conceptual simplifications
 
 1. Constant total mass in the denominator:
-   - The code uses m0 instead of the time-varying total mass.
-   - A more rigorous model would use m_total(t) in the energy term.
+   - The code uses biomass_initial_mass instead of the time-varying total mass.
+   - A more rigorous model would use total_mass(t) in the energy term.
 
 2. Single lumped temperature:
    - It assumes all biomass and products are at the same temperature.

@@ -7,42 +7,42 @@ from scipy.integrate import solve_ivp
 # ============================================================
 
 m0 = 0.10                 # Initial biomass mass (kg)
-T_in = 298.15             # Initial temperature (K)
-Cp_bio = 1600             # Biomass heat capacity (J/kg-K)
+T0 = 298.15               # Initial temperature (K)
+Cp = 1600                 # Biomass heat capacity (J/kg-K)
 UA = 8                    # Heat transfer coefficient (W/K)
-dH_pyr = 300000           # Pyrolysis enthalpy (J/kg)
-T_w_max = 773.15          # Maximum wall temperature (K)
+dH = 300000               # Pyrolysis enthalpy (J/kg)
+Tw_max = 773.15           # Maximum wall temperature (K)
 R = 8.314                 # Gas constant (J/mol-K)
 
 # Biomass composition fractions
-f_cell = 0.45
-f_hem = 0.30
-f_lig = 0.25
+f_c = 0.45
+f_h = 0.30
+f_l = 0.25
 
 # ============================================================
 # INITIAL CONDITIONS
 # ============================================================
 
-m_cell_0 = m0 * f_cell
-m_hem_0 = m0 * f_hem
-m_lig_0 = m0 * f_lig
+m_c0 = m0 * f_c
+m_h0 = m0 * f_h
+m_l0 = m0 * f_l
 
-m_vap_0 = 0
-m_char_0 = 0
-m_gas_0 = 0
+m_v0 = 0
+m_ch0 = 0
+m_g0 = 0
 
 # State vector:
 # y = [cellulose, hemicellulose, lignin,
 #      vapor, char, gas, temperature]
 
 y0 = [
-    m_cell_0,
-    m_hem_0,
-    m_lig_0,
-    m_vap_0,
-    m_char_0,
-    m_gas_0,
-    T_in
+    m_c0,
+    m_h0,
+    m_l0,
+    m_v0,
+    m_ch0,
+    m_g0,
+    T0
 ]
 
 # ============================================================
@@ -52,100 +52,98 @@ y0 = [
 def pyrolysis_odes(t, y):
 
     # State variables
-    m_cell = y[0]
-    m_hem = y[1]
-    m_lig = y[2]
-    m_vap = y[3]
-    m_char = y[4]
-    m_gas = y[5]
+    m_c = y[0]
+    m_h = y[1]
+    m_l = y[2]
+    m_v = y[3]
+    m_ch = y[4]
+    m_g = y[5]
     T = y[6]
 
     # --------------------------------------------------------
     # Wall temperature
     # --------------------------------------------------------
 
-    T_w = min(T_in + 10*t, T_w_max)
+    T_w = min(T0 + 10*t, Tw_max)
 
     # --------------------------------------------------------
     # Reaction rate constants
     # --------------------------------------------------------
 
-    k_cell = 70000 * np.exp(-80000 / (R*T))
+    k_c = 70000 * np.exp(-80000 / (R*T))
 
-    k_hem = 2e9 * np.exp(-146000 / (R*T))
+    k_h = 2e9 * np.exp(-146000 / (R*T))
 
-    k_lignin = 4300 * np.exp(-77000 / (R*T))
+    k_l = 4300 * np.exp(-77000 / (R*T))
 
-    k_secondary = 2e5 * np.exp(-95000 / (R*T))
+    k_s = 2e5 * np.exp(-95000 / (R*T))
 
     # --------------------------------------------------------
     # Reaction rates
     # --------------------------------------------------------
 
-    r_cell = k_cell * m_cell
+    r_c = k_c * m_c
 
-    r_hem = k_hem * m_hem
+    r_h = k_h * m_h
 
-    r_lignin = k_lignin * m_lig
+    r_l = k_l * m_l
 
-    r_S = k_secondary * m_vap
+    r_s = k_s * m_v
 
     # --------------------------------------------------------
     # ODEs
     # --------------------------------------------------------
 
-    dm_cell_dt = -r_cell
+    dm_c_dt = -r_c
 
-    dm_hem_dt = -r_hem
+    dm_h_dt = -r_h
 
-    dm_lig_dt = -r_lignin
+    dm_l_dt = -r_l
 
     # Vapor
-    dm_vap_dt = (
-        0.78*r_cell
-        + 0.70*r_hem
-        + 0.35*r_lignin
-        - r_S
+    dm_v_dt = (
+        0.78*r_c
+        + 0.70*r_h
+        + 0.35*r_l
+        - r_s
     )
 
     # Char
-    dm_char_dt = (
-        0.10*r_cell
-        + 0.15*r_hem
-        + 0.45*r_lignin
-        + 0.25*r_S
+    dm_ch_dt = (
+        0.10*r_c
+        + 0.15*r_h
+        + 0.45*r_l
+        + 0.25*r_s
     )
 
     # Gas
-    dm_gas_dt = (
-        0.12*r_cell
-        + 0.15*r_hem
-        + 0.20*r_lignin
-        + 0.75*r_S
+    dm_g_dt = (
+        0.12*r_c
+        + 0.15*r_h
+        + 0.20*r_l
+        + 0.75*r_s
     )
 
     # --------------------------------------------------------
     # Energy balance
     # --------------------------------------------------------
 
-    heat_transfer = UA * (T_w - T)
+    q_in = UA * (T_w - T)
 
-    heat_required = dH_pyr * (
-        r_cell + r_hem + r_lignin
-    )
+    q_rxn = dH * (r_c + r_h + r_l)
 
     dT_dt = (
-        heat_transfer - heat_required
-    ) / (m0 * Cp_bio)
+        q_in - q_rxn
+    ) / (m0 * Cp)
 
     # Return derivatives
     dydt = [
-        dm_cell_dt,
-        dm_hem_dt,
-        dm_lig_dt,
-        dm_vap_dt,
-        dm_char_dt,
-        dm_gas_dt,
+        dm_c_dt,
+        dm_h_dt,
+        dm_l_dt,
+        dm_v_dt,
+        dm_ch_dt,
+        dm_g_dt,
         dT_dt
     ]
 
@@ -175,12 +173,12 @@ solution = solve_ivp(
 t = solution.t
 y = solution.y
 
-m_cell = y[0]
-m_hem = y[1]
-m_lig = y[2]
-m_vap = y[3]
-m_char = y[4]
-m_gas = y[5]
+m_c = y[0]
+m_h = y[1]
+m_l = y[2]
+m_v = y[3]
+m_ch = y[4]
+m_g = y[5]
 T = y[6]
 
 
@@ -190,12 +188,12 @@ T = y[6]
 
 plt.figure(figsize=(9,6))
 
-plt.plot(t, m_cell, label='Cellulose', linewidth=2)
-plt.plot(t, m_hem, label='Hemicellulose', linewidth=2)
-plt.plot(t, m_lig, label='Lignin', linewidth=2)
-plt.plot(t, m_vap, label='Vapor', linewidth=2)
-plt.plot(t, m_char, label='Char', linewidth=2)
-plt.plot(t, m_gas, label='Gas', linewidth=2)
+plt.plot(t, m_c, label='Cellulose', linewidth=2)
+plt.plot(t, m_h, label='Hemicellulose', linewidth=2)
+plt.plot(t, m_l, label='Lignin', linewidth=2)
+plt.plot(t, m_v, label='Vapor', linewidth=2)
+plt.plot(t, m_ch, label='Char', linewidth=2)
+plt.plot(t, m_g, label='Gas', linewidth=2)
 
 plt.xlabel('Time (s)')
 plt.ylabel('Mass (kg)')
@@ -229,7 +227,7 @@ plt.show()
 # GRAPH 3: WALL TEMPERATURE
 # ============================================================
 
-T_wall = np.minimum(T_in + 10*t, T_w_max)
+T_wall = np.minimum(T0 + 10*t, Tw_max)
 
 plt.figure(figsize=(9,6))
 
@@ -249,12 +247,12 @@ plt.show()
 # ============================================================
 
 m_total = (
-    m_cell
-    + m_hem
-    + m_lig
-    + m_vap
-    + m_char
-    + m_gas
+    m_c
+    + m_h
+    + m_l
+    + m_v
+    + m_ch
+    + m_g
 )
 
 plt.figure(figsize=(9,6))
